@@ -131,18 +131,14 @@ class AuthService {
     }
   }
 
-  sendMagicLink(email, token) {
-    const magicUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/verify?token=${token}&email=${encodeURIComponent(email)}`;
-    
-    console.log('\n=== MAGIC LINK EMAIL ===');
-    console.log(`To: ${email}`);
-    console.log(`Subject: Your ROI Analysis Access Link`);
-    console.log(`\nClick here to access your ROI analysis:\n${magicUrl}`);
-    console.log('\nThis link expires in 15 minutes.');
-    console.log('========================\n');
-    
-    logger.info('Magic link email sent (console)', email);
-    return true;
+  async sendMagicLink(email, token, emailService) {
+    try {
+      const result = await emailService.sendMagicLink(email, token);
+      return result.success;
+    } catch (error) {
+      logger.error('Failed to send magic link', error, email);
+      return false;
+    }
   }
 }
 

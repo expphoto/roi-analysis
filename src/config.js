@@ -26,6 +26,13 @@ const config = {
     baseUrl: process.env.IN_NINJA_BASE_URL.replace(/\/$/, ''),
     apiToken: process.env.IN_NINJA_API_TOKEN
   },
+  email: {
+    mailgunApiKey: process.env.MAILGUN_API_KEY,
+    mailgunDomain: process.env.MAILGUN_DOMAIN,
+    fromEmail: process.env.MAILGUN_FROM_EMAIL || 'noreply@localhost',
+    fromName: process.env.MAILGUN_FROM_NAME || 'ROI Analysis Portal',
+    baseUrl: process.env.BASE_URL || 'http://localhost:3000'
+  },
   dataFiles: {
     pricebook: process.env.PRICEBOOK_PATH || './data/pricebook.json',
     benefits: process.env.BENEFITS_PATH || './data/benefits.json',
@@ -74,6 +81,7 @@ function validateConfig() {
   console.log(`   - Environment: ${config.nodeEnv}`);
   console.log(`   - Port: ${config.port}`);
   console.log(`   - Invoice Ninja: ${config.invoiceNinja.baseUrl}`);
+  console.log(`   - Email: ${config.email.mailgunApiKey ? 'Mailgun configured' : 'Development mode (console)'}`);
   console.log(`   - Data files: ${Object.keys(config.dataFiles).length} loaded`);
 }
 

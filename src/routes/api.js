@@ -1,12 +1,14 @@
 const express = require('express');
 const ROIService = require('../services/roiService');
 const AuthService = require('../services/authService');
+const EmailService = require('../services/emailService');
 const { roiLimiter, magicLinkLimiter } = require('../middleware/rateLimiter');
 const { logger, hashIP } = require('../utils/logger');
 
 const router = express.Router();
 const roiService = new ROIService();
 const authService = new AuthService();
+const emailService = new EmailService();
 
 router.post('/request-access', magicLinkLimiter, async (req, res) => {
   try {
@@ -23,7 +25,7 @@ router.post('/request-access', magicLinkLimiter, async (req, res) => {
     const ipHash = hashIP(clientIP);
     
     const token = authService.generateMagicLink(email, userAgent, ipHash);
-    const sent = authService.sendMagicLink(email, token);
+    const sent = await authService.sendMagicLink(email, token, emailService);
     
     if (sent) {
       logger.info('Magic link request successful', email);

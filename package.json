@@ -18,7 +18,8 @@
     "crypto": "^1.0.1",
     "nodemailer": "^6.9.7",
     "dotenv": "^16.3.1",
-    "cookie-parser": "^1.4.6"
+    "cookie-parser": "^1.4.6",
+    "mailgun-js": "^0.22.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
