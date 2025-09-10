@@ -20,7 +20,7 @@ class EmailService {
   async sendMagicLink(email, token) {
     logger.info('EmailService.sendMagicLink called', email);
     
-    const magicUrl = `${config.email.baseUrl}/verify?token=${token}&email=${encodeURIComponent(email)}`;
+    const magicUrl = `${config.email.baseUrl}/api/verify?token=${token}&email=${encodeURIComponent(email)}`;
     
     const emailData = {
       from: `${config.email.fromName} <${config.email.fromEmail}>`,
