@@ -12,9 +12,11 @@ const emailService = new EmailService();
 
 router.post('/request-access', magicLinkLimiter, async (req, res) => {
   try {
+    logger.info('Request-access endpoint called');
     const { email } = req.body;
     
     if (!email || !email.includes('@')) {
+      logger.warn('Invalid email provided', email);
       return res.status(400).json({ 
         error: 'Valid email address is required' 
       });
@@ -24,7 +26,10 @@ router.post('/request-access', magicLinkLimiter, async (req, res) => {
     const clientIP = req.ip || req.connection.remoteAddress || '';
     const ipHash = hashIP(clientIP);
     
+    logger.info('Generating magic link', email);
     const token = authService.generateMagicLink(email, userAgent, ipHash);
+    
+    logger.info('Sending magic link email', email);
     const sent = await authService.sendMagicLink(email, token, emailService);
     
     if (sent) {

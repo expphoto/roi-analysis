@@ -133,7 +133,9 @@ class AuthService {
 
   async sendMagicLink(email, token, emailService) {
     try {
+      logger.info('AuthService.sendMagicLink called', email);
       const result = await emailService.sendMagicLink(email, token);
+      logger.info('Email service returned result', email);
       return result.success;
     } catch (error) {
       logger.error('Failed to send magic link', error, email);

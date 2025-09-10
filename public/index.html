@@ -132,6 +132,8 @@
             messageDiv.style.display = 'none';
             
             try {
+                console.log('Sending request to /api/request-access with email:', email);
+                
                 const response = await fetch('/api/request-access', {
                     method: 'POST',
                     headers: {
@@ -140,7 +142,11 @@
                     body: JSON.stringify({ email: email })
                 });
                 
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
                 const result = await response.json();
+                console.log('Response data:', result);
                 
                 if (response.ok) {
                     messageDiv.className = 'message success';
@@ -152,8 +158,9 @@
                 }
                 
             } catch (error) {
+                console.error('Fetch error:', error);
                 messageDiv.className = 'message error';
-                messageDiv.textContent = 'Network error. Please try again.';
+                messageDiv.textContent = 'Network error: ' + error.message;
             }
             
             messageDiv.style.display = 'block';

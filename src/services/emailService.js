@@ -18,6 +18,8 @@ class EmailService {
   }
 
   async sendMagicLink(email, token) {
+    logger.info('EmailService.sendMagicLink called', email);
+    
     const magicUrl = `${config.email.baseUrl}/verify?token=${token}&email=${encodeURIComponent(email)}`;
     
     const emailData = {
@@ -28,8 +30,11 @@ class EmailService {
       text: this.generateTextEmail(email, magicUrl)
     };
 
+    logger.info(`Email config - isConfigured: ${this.isConfigured}, nodeEnv: ${config.nodeEnv}`);
+
     if (this.isConfigured && config.nodeEnv === 'production') {
       try {
+        logger.info('Sending email via Mailgun', email);
         const result = await this.mg.messages().send(emailData);
         logger.info('Magic link email sent via Mailgun', email);
         return { success: true, messageId: result.id };
