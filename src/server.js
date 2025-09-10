@@ -18,6 +18,8 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:"],
+      formAction: ["'self'"],
+      connectSrc: ["'self'"],
     },
   },
 }));
