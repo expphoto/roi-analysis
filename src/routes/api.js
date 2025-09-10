@@ -2,7 +2,7 @@ const express = require('express');
 const ROIService = require('../services/roiService');
 const AuthService = require('../services/authService');
 const { roiLimiter, magicLinkLimiter } = require('../middleware/rateLimiter');
-const { logger } = require('../utils/logger');
+const { logger, hashIP } = require('../utils/logger');
 
 const router = express.Router();
 const roiService = new ROIService();
@@ -18,7 +18,11 @@ router.post('/request-access', magicLinkLimiter, async (req, res) => {
       });
     }
 
-    const token = authService.generateMagicLink(email);
+    const userAgent = req.get('User-Agent') || '';
+    const clientIP = req.ip || req.connection.remoteAddress || '';
+    const ipHash = hashIP(clientIP);
+    
+    const token = authService.generateMagicLink(email, userAgent, ipHash);
     const sent = authService.sendMagicLink(email, token);
     
     if (sent) {
@@ -55,10 +59,21 @@ router.get('/verify', async (req, res) => {
       `);
     }
 
-    const isValid = authService.validateMagicLink(token, email);
+    const userAgent = req.get('User-Agent') || '';
+    const clientIP = req.ip || req.connection.remoteAddress || '';
+    const ipHash = hashIP(clientIP);
     
-    if (isValid) {
-      const redirectUrl = `/roi-analysis.html?email=${encodeURIComponent(email)}&token=${token}`;
+    const sessionToken = authService.exchangeMagicLinkForSession(token, email, userAgent, ipHash);
+    
+    if (sessionToken) {
+      res.cookie('session_token', sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 1000
+      });
+      
+      const redirectUrl = `/roi-analysis.html?email=${encodeURIComponent(email)}`;
       res.redirect(redirectUrl);
     } else {
       res.status(400).send(`
@@ -83,7 +98,8 @@ router.get('/verify', async (req, res) => {
 
 router.get('/roi', roiLimiter, async (req, res) => {
   try {
-    const { email, token } = req.query;
+    const { email } = req.query;
+    const sessionToken = req.cookies.session_token || req.get('Authorization')?.replace('Bearer ', '');
     
     if (!email) {
       return res.status(400).json({ 
@@ -91,9 +107,15 @@ router.get('/roi', roiLimiter, async (req, res) => {
       });
     }
 
-    if (!token || !authService.validateMagicLink(token, email)) {
+    const userAgent = req.get('User-Agent') || '';
+    const clientIP = req.ip || req.connection.remoteAddress || '';
+    const ipHash = hashIP(clientIP);
+    
+    const validEmail = authService.validateSessionToken(sessionToken, userAgent, ipHash);
+    
+    if (!validEmail || validEmail !== email.toLowerCase()) {
       return res.status(401).json({ 
-        error: 'Valid authentication token is required' 
+        error: 'Valid authentication is required' 
       });
     }
 
@@ -137,7 +159,8 @@ router.get('/roi', roiLimiter, async (req, res) => {
 
 router.get('/roi/ui', roiLimiter, async (req, res) => {
   try {
-    const { email, token } = req.query;
+    const { email } = req.query;
+    const sessionToken = req.cookies.session_token || req.get('Authorization')?.replace('Bearer ', '');
     
     if (!email) {
       return res.status(400).json({ 
@@ -145,9 +168,15 @@ router.get('/roi/ui', roiLimiter, async (req, res) => {
       });
     }
 
-    if (!token || !authService.validateMagicLink(token, email)) {
+    const userAgent = req.get('User-Agent') || '';
+    const clientIP = req.ip || req.connection.remoteAddress || '';
+    const ipHash = hashIP(clientIP);
+    
+    const validEmail = authService.validateSessionToken(sessionToken, userAgent, ipHash);
+    
+    if (!validEmail || validEmail !== email.toLowerCase()) {
       return res.status(401).json({ 
-        error: 'Valid authentication token is required' 
+        error: 'Valid authentication is required' 
       });
     }
 

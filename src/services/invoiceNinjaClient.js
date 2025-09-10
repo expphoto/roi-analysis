@@ -93,48 +93,122 @@ class InvoiceNinjaClient {
     }
   }
 
-  async getInvoices(clientId, limit = 12) {
+  async getInvoices(clientId, limit = 12, monthsBack = 12) {
     try {
       logger.info(`Fetching invoices for client ${clientId}`);
       
-      const response = await this.client.get('/invoices', {
-        params: {
-          client_id: clientId,
-          per_page: Math.min(limit, 50),
-          sort: 'date|desc'
-        }
-      });
+      const cutoffDate = new Date();
+      cutoffDate.setMonth(cutoffDate.getMonth() - monthsBack);
+      
+      let allInvoices = [];
+      let page = 1;
+      let hasMore = true;
+      
+      while (hasMore && allInvoices.length < limit) {
+        const response = await this.client.get('/invoices', {
+          params: {
+            client_id: clientId,
+            per_page: 50,
+            page: page,
+            sort: 'date|desc'
+          }
+        });
 
-      return response.data.data || [];
+        const invoices = response.data.data || [];
+        
+        if (invoices.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        for (const invoice of invoices) {
+          if (allInvoices.length >= limit) {
+            hasMore = false;
+            break;
+          }
+          
+          const invoiceDate = new Date(invoice.date);
+          if (invoiceDate < cutoffDate) {
+            hasMore = false;
+            break;
+          }
+          
+          allInvoices.push(invoice);
+        }
+
+        if (invoices.length < 50) {
+          hasMore = false;
+        }
+        
+        page++;
+      }
+
+      logger.info(`Fetched ${allInvoices.length} invoices for client ${clientId}`);
+      return allInvoices;
     } catch (error) {
       logger.error('Error fetching invoices', error);
       throw error;
     }
   }
 
-  async getPayments(clientId = null, limit = 12) {
+  async getPayments(clientId = null, limit = 12, monthsBack = 12) {
     try {
       logger.info(`Fetching payments${clientId ? ` for client ${clientId}` : ''}`);
       
-      const params = {
-        per_page: Math.min(limit * 3, 100),
-        sort: 'date|desc'
-      };
+      const cutoffDate = new Date();
+      cutoffDate.setMonth(cutoffDate.getMonth() - monthsBack);
+      
+      let allPayments = [];
+      let page = 1;
+      let hasMore = true;
+      
+      while (hasMore && allPayments.length < limit) {
+        const params = {
+          per_page: 50,
+          page: page,
+          sort: 'date|desc'
+        };
 
-      if (clientId) {
-        params.client_id = clientId;
+        if (clientId) {
+          params.client_id = clientId;
+        }
+
+        const response = await this.client.get('/payments', { params });
+        let payments = response.data.data || [];
+        
+        if (payments.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        if (clientId && !params.client_id) {
+          payments = payments.filter(payment => payment.client_id === clientId);
+        }
+
+        for (const payment of payments) {
+          if (allPayments.length >= limit) {
+            hasMore = false;
+            break;
+          }
+          
+          const paymentDate = new Date(payment.date);
+          if (paymentDate < cutoffDate) {
+            hasMore = false;
+            break;
+          }
+          
+          allPayments.push(payment);
+        }
+
+        if (payments.length < 50) {
+          hasMore = false;
+        }
+        
+        page++;
       }
 
-      const response = await this.client.get('/payments', { params });
-      let payments = response.data.data || [];
-
-      if (clientId && !params.client_id) {
-        payments = payments.filter(payment => 
-          payment.client_id === clientId
-        );
-      }
-
-      return payments.slice(0, limit);
+      logger.info(`Fetched ${allPayments.length} payments for client ${clientId || 'all'}`);
+      return allPayments;
     } catch (error) {
       logger.error('Error fetching payments', error);
       throw error;

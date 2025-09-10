@@ -270,19 +270,30 @@
         async function loadROIData() {
             const urlParams = new URLSearchParams(window.location.search);
             const email = urlParams.get('email');
-            const token = urlParams.get('token');
             
-            if (!email || !token) {
-                showError('Missing authentication parameters. Please request a new access link.');
+            if (!email) {
+                showError('Missing email parameter. Please request a new access link.');
                 return;
             }
 
             try {
-                const response = await fetch(`/api/roi/ui?email=${encodeURIComponent(email)}&token=${token}`);
+                const response = await fetch(`/api/roi/ui?email=${encodeURIComponent(email)}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
                 const data = await response.json();
                 
                 if (!response.ok) {
-                    throw new Error(data.error || 'Failed to load ROI data');
+                    if (response.status === 401) {
+                        showError('Your session has expired. Please request a new access link.');
+                    } else {
+                        throw new Error(data.error || 'Failed to load ROI data');
+                    }
+                    return;
                 }
                 
                 displayROIData(data);

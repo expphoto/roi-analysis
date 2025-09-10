@@ -4,6 +4,10 @@ const hashEmail = (email) => {
   return crypto.createHash('sha256').update(email.toLowerCase()).digest('hex').substring(0, 16);
 };
 
+const hashIP = (ip) => {
+  return crypto.createHash('sha256').update(ip).digest('hex').substring(0, 16);
+};
+
 const logger = {
   info: (message, email = null) => {
     const timestamp = new Date().toISOString();
@@ -25,4 +29,4 @@ const logger = {
   }
 };
 
-module.exports = { logger, hashEmail };
+module.exports = { logger, hashEmail, hashIP };

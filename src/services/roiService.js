@@ -109,24 +109,56 @@ class ROIService {
       sum + (parseFloat(invoice.amount) || 0), 0
     );
 
-    const paid12m = recentPayments.reduce((sum, payment) => 
-      sum + (parseFloat(payment.amount) || 0), 0
-    );
+    let paid12m = 0;
+    let onTimePaymentCount = 0;
+    let eligibleInvoiceCount = 0;
 
-    const onTimePayments = recentInvoices.filter(invoice => {
-      if (!invoice.due_date) return false;
-      
-      const payment = recentPayments.find(p => 
-        p.invoices?.some(inv => inv.invoice_id === invoice.id)
-      );
-      
-      if (!payment) return false;
-      
-      return new Date(payment.date) <= new Date(invoice.due_date);
-    });
+    for (const invoice of recentInvoices) {
+      if (!invoice.due_date) continue;
+      eligibleInvoiceCount++;
 
-    const onTimeRate = recentInvoices.length > 0 ? 
-      onTimePayments.length / recentInvoices.length : 0;
+      let invoicePaidAmount = 0;
+      let earliestPaymentDate = null;
+
+      for (const payment of recentPayments) {
+        if (!payment.invoices) continue;
+
+        for (const paymentInvoice of payment.invoices) {
+          if (paymentInvoice.invoice_id === invoice.id) {
+            const paymentAmount = parseFloat(paymentInvoice.amount) || 0;
+            
+            if (payment.type === 'refund' || paymentAmount < 0) {
+              invoicePaidAmount -= Math.abs(paymentAmount);
+            } else {
+              invoicePaidAmount += paymentAmount;
+            }
+
+            const paymentDate = new Date(payment.date);
+            if (!earliestPaymentDate || paymentDate < earliestPaymentDate) {
+              earliestPaymentDate = paymentDate;
+            }
+          }
+        }
+      }
+
+      paid12m += Math.max(0, invoicePaidAmount);
+
+      if (earliestPaymentDate && earliestPaymentDate <= new Date(invoice.due_date)) {
+        onTimePaymentCount++;
+      }
+    }
+
+    for (const payment of recentPayments) {
+      if (!payment.invoices || payment.invoices.length === 0) {
+        const paymentAmount = parseFloat(payment.amount) || 0;
+        if (payment.type === 'credit' && paymentAmount > 0) {
+          paid12m += paymentAmount;
+        }
+      }
+    }
+
+    const onTimeRate = eligibleInvoiceCount > 0 ? 
+      onTimePaymentCount / eligibleInvoiceCount : 0;
 
     return {
       billed_12m: Math.round(billed12m * 100) / 100,
@@ -142,30 +174,61 @@ class ROIService {
       if (!invoice.line_items) continue;
 
       for (const line of invoice.line_items) {
+        if (this.isNonDiscountLineType(line)) {
+          continue;
+        }
+
         const productKey = line.product_key;
-        const quantity = parseFloat(line.quantity) || 1;
-        const unitCost = parseFloat(line.cost) || 0;
-        const lineDiscount = parseFloat(line.discount) || 0;
+        const quantity = Math.max(0, parseFloat(line.quantity) || 0);
+        const unitCost = Math.max(0, parseFloat(line.cost) || 0);
+        const lineDiscount = Math.max(0, parseFloat(line.discount) || 0);
+
+        if (quantity === 0) continue;
 
         let listPrice = 0;
 
-        if (productKey && this.pricebook.products[productKey]) {
-          listPrice = this.pricebook.products[productKey].list_price;
-        } else if (productKey) {
+        if (productKey) {
           const product = products.find(p => p.product_key === productKey);
           if (product && product.price) {
             listPrice = parseFloat(product.price);
+          } else if (this.pricebook.products[productKey]) {
+            listPrice = this.pricebook.products[productKey].list_price;
           }
         }
 
-        if (listPrice > 0) {
-          const savings = Math.max(0, listPrice - unitCost - lineDiscount) * quantity;
-          totalSavings += savings;
+        if (listPrice > 0 && listPrice > unitCost) {
+          const perUnitSavings = Math.max(0, listPrice - unitCost - lineDiscount);
+          const lineSavings = perUnitSavings * quantity;
+          
+          const maxReasonableSavings = listPrice * quantity * 0.95;
+          const cappedSavings = Math.min(lineSavings, maxReasonableSavings);
+          
+          totalSavings += Math.max(0, cappedSavings);
         }
       }
     }
 
-    return Math.round(totalSavings * 100) / 100;
+    return Math.round(Math.max(0, totalSavings) * 100) / 100;
+  }
+
+  isNonDiscountLineType(line) {
+    const lineType = line.type_id || line.product_type || '';
+    const description = (line.description || '').toLowerCase();
+    
+    const excludeTypes = ['tax', 'shipping', 'fee', 'adjustment'];
+    const excludeDescriptions = ['tax', 'shipping', 'fee', 'late fee', 'setup fee'];
+    
+    if (excludeTypes.includes(lineType.toLowerCase())) {
+      return true;
+    }
+    
+    for (const excludeDesc of excludeDescriptions) {
+      if (description.includes(excludeDesc)) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   calculateShouldBePaying(invoices) {
