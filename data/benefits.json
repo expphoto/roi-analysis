@@ -1,0 +1,36 @@
+{
+  "benefits": {
+    "EDR": {
+      "bullets": [
+        "24/7 endpoint monitoring",
+        "Ransomware containment",
+        "Real-time threat detection",
+        "Automated incident response"
+      ]
+    },
+    "MDM": {
+      "bullets": [
+        "Device enrollment and configuration",
+        "Remote wipe capabilities",
+        "App management and deployment",
+        "Compliance reporting"
+      ]
+    },
+    "BACKUP": {
+      "bullets": [
+        "Automated daily backups",
+        "Point-in-time recovery",
+        "Encrypted cloud storage",
+        "Disaster recovery planning"
+      ]
+    },
+    "MONITORING": {
+      "bullets": [
+        "24/7 network monitoring",
+        "Proactive issue detection",
+        "Performance optimization",
+        "Security event correlation"
+      ]
+    }
+  }
+}

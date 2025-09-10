@@ -1,0 +1,19 @@
+{
+  "plans": {
+    "basic": {
+      "name": "Basic Security Package",
+      "per_seat": 25.00,
+      "includes": ["EDR"]
+    },
+    "standard": {
+      "name": "Standard Security Package", 
+      "per_seat": 40.00,
+      "includes": ["EDR", "MDM", "BACKUP"]
+    },
+    "premium": {
+      "name": "Premium Security Package",
+      "per_seat": 60.00,
+      "includes": ["EDR", "MDM", "BACKUP", "MONITORING"]
+    }
+  }
+}

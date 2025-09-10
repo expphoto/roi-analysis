@@ -1,0 +1,30 @@
+{
+  "name": "roi-analysis",
+  "version": "1.0.0",
+  "description": "ROI Analysis tool for Invoice Ninja v5 clients",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "axios": "^1.6.2",
+    "crypto": "^1.0.1",
+    "nodemailer": "^6.9.7",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
+  },
+  "keywords": ["invoice-ninja", "roi", "analysis"],
+  "author": "",
+  "license": "MIT"
+}

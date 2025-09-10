@@ -1,0 +1,20 @@
+{
+  "products": {
+    "EDR": {
+      "name": "Endpoint Detection & Response",
+      "list_price": 15.00
+    },
+    "MDM": {
+      "name": "Mobile Device Management", 
+      "list_price": 8.00
+    },
+    "BACKUP": {
+      "name": "Cloud Backup Service",
+      "list_price": 12.00
+    },
+    "MONITORING": {
+      "name": "24/7 Network Monitoring",
+      "list_price": 25.00
+    }
+  }
+}
