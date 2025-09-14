@@ -10,6 +10,9 @@ const { logger } = require('./utils/logger');
 
 const app = express();
 
+// Respect proxy headers (X-Forwarded-For) in deployments
+app.set('trust proxy', true);
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {

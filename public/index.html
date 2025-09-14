@@ -104,7 +104,7 @@
             Enter your email address to receive a secure access link to view your ROI analysis, including recent invoices, payments, and savings calculations.
         </div>
         
-        <form id="accessForm" action="" method="post">
+        <form id="accessForm" action="/api/request-access" method="post">
             <div class="form-group">
                 <label for="email">Email Address:</label>
                 <input type="email" id="email" name="email" required 
@@ -119,54 +119,6 @@
         <div id="message" class="message" style="display: none;"></div>
     </div>
 
-    <script>
-        document.getElementById('accessForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const submitButton = document.getElementById('submitButton');
-            const messageDiv = document.getElementById('message');
-            
-            submitButton.disabled = true;
-            submitButton.textContent = 'Sending...';
-            messageDiv.style.display = 'none';
-            
-            try {
-                console.log('Sending request to /api/request-access with email:', email);
-                
-                const response = await fetch('/api/request-access', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ email: email })
-                });
-                
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-                
-                const result = await response.json();
-                console.log('Response data:', result);
-                
-                if (response.ok) {
-                    messageDiv.className = 'message success';
-                    messageDiv.textContent = result.message;
-                    document.getElementById('email').value = '';
-                } else {
-                    messageDiv.className = 'message error';
-                    messageDiv.textContent = result.error || 'An error occurred';
-                }
-                
-            } catch (error) {
-                console.error('Fetch error:', error);
-                messageDiv.className = 'message error';
-                messageDiv.textContent = 'Network error: ' + error.message;
-            }
-            
-            messageDiv.style.display = 'block';
-            submitButton.disabled = false;
-            submitButton.textContent = 'Send Access Link';
-        });
-    </script>
-</body>
+    <script src="/js/access.js"></script>
+  </body>
 </html>

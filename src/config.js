@@ -31,7 +31,8 @@ const config = {
     mailgunDomain: process.env.MAILGUN_DOMAIN,
     fromEmail: process.env.MAILGUN_FROM_EMAIL || 'noreply@localhost',
     fromName: process.env.MAILGUN_FROM_NAME || 'ROI Analysis Portal',
-    baseUrl: process.env.BASE_URL || 'http://localhost:3000'
+    baseUrl: process.env.BASE_URL || 'http://localhost:3000',
+    delivery: (process.env.EMAIL_DELIVERY || 'console').toLowerCase()
   },
   dataFiles: {
     pricebook: process.env.PRICEBOOK_PATH || './data/pricebook.json',

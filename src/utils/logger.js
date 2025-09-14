@@ -4,8 +4,19 @@ const hashEmail = (email) => {
   return crypto.createHash('sha256').update(email.toLowerCase()).digest('hex').substring(0, 16);
 };
 
+function normalizeIP(ip) {
+  if (!ip) return '';
+  // Normalize IPv6-mapped IPv4 and loopback addresses for consistency
+  if (ip.startsWith('::ffff:')) {
+    return ip.split(':').pop();
+  }
+  if (ip === '::1') return '127.0.0.1';
+  return ip;
+}
+
 const hashIP = (ip) => {
-  return crypto.createHash('sha256').update(ip).digest('hex').substring(0, 16);
+  const n = normalizeIP(ip);
+  return crypto.createHash('sha256').update(n).digest('hex').substring(0, 16);
 };
 
 const logger = {
@@ -29,4 +40,4 @@ const logger = {
   }
 };
 
-module.exports = { logger, hashEmail, hashIP };
+module.exports = { logger, hashEmail, hashIP, normalizeIP };

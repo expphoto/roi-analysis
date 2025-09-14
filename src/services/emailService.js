@@ -5,15 +5,18 @@ const { logger } = require('../utils/logger');
 class EmailService {
   constructor() {
     this.isConfigured = !!(config.email.mailgunApiKey && config.email.mailgunDomain);
-    
-    if (this.isConfigured) {
+    this.deliveryMode = config.email.delivery; // 'console' | 'enabled' | 'disabled'
+
+    if (this.isConfigured && this.deliveryMode !== 'disabled') {
       this.mg = mailgun({
         apiKey: config.email.mailgunApiKey,
-        domain: config.email.mailgunDomain
+        domain: config.email.mailgunDomain,
       });
-      logger.info('Mailgun email service initialized');
+      logger.info(`Mailgun initialized; delivery=${this.deliveryMode}, env=${config.nodeEnv}`);
+    } else if (this.isConfigured && this.deliveryMode === 'disabled') {
+      logger.info('Mailgun configured but delivery disabled by EMAIL_DELIVERY=disabled');
     } else {
-      logger.info('Email service running in development mode (console output)');
+      logger.info('Email service in console mode (no external delivery)');
     }
   }
 
@@ -30,11 +33,23 @@ class EmailService {
       text: this.generateTextEmail(email, magicUrl)
     };
 
-    logger.info(`Email config - isConfigured: ${this.isConfigured}, nodeEnv: ${config.nodeEnv}`);
+    logger.info(`Email config - isConfigured: ${this.isConfigured}, env: ${config.nodeEnv}, delivery: ${this.deliveryMode}`);
 
-    if (this.isConfigured && config.nodeEnv === 'production') {
+    // Send via Mailgun if configured AND delivery mode is enabled (regardless of NODE_ENV)
+    if (this.isConfigured && this.deliveryMode === 'enabled') {
       try {
         logger.info('Sending email via Mailgun', email);
+        const result = await this.mg.messages().send(emailData);
+        logger.info('Magic link email sent via Mailgun', email);
+        return { success: true, messageId: result.id };
+      } catch (error) {
+        logger.error('Failed to send email via Mailgun', error, email);
+        throw new Error('Failed to send email');
+      }
+    } else if (config.nodeEnv === 'production' && this.isConfigured) {
+      // Back-compat: in production default to sending if configured
+      try {
+        logger.info('Sending email via Mailgun (production default)', email);
         const result = await this.mg.messages().send(emailData);
         logger.info('Magic link email sent via Mailgun', email);
         return { success: true, messageId: result.id };
